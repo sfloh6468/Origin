@@ -12,7 +12,8 @@ import {
   AlertTriangle,
   ChevronRight,
   UserCheck,
-  UserX
+  UserX,
+  Trash2
 } from 'lucide-react';
 import { Subscriber, AccountStatus, Ticket } from '../types';
 
@@ -215,29 +216,29 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center justify-end space-x-3 opacity-0 group-hover:opacity-100 transition-opacity">
                       {isManager && (
                         <>
                           <button 
                             onClick={() => changeStatus(sub.id, sub.status === AccountStatus.ACTIVE ? AccountStatus.SUSPENDED : AccountStatus.ACTIVE)}
                             title="Toggle Active/Suspended"
-                            className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                            className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
                           >
                             <UserCheck size={18} />
                           </button>
                           <button 
                             onClick={() => changeStatus(sub.id, AccountStatus.UNSUBSCRIBED)}
                             title="Unsubscribe"
-                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                           >
                             <UserX size={18} />
                           </button>
                           <button 
                             onClick={() => handleDelete(sub.id)}
                             title="Delete Permanently"
-                            className="p-2 text-slate-400 hover:text-red-700 hover:bg-red-100 rounded-lg transition-colors"
+                            className="p-2 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white rounded-lg transition-all flex items-center justify-center shadow-sm"
                           >
-                            <Plus className="rotate-45" size={18} />
+                            <Trash2 size={16} />
                           </button>
                         </>
                       )}
