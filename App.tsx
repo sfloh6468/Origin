@@ -181,6 +181,7 @@ const App: React.FC = () => {
                       setTickets={setTickets}
                       subscribers={subscribers}
                       setSubscribers={setSubscribers}
+                      currentUser={currentUser}
                     />
                   } 
                 />

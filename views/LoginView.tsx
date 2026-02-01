@@ -1,20 +1,29 @@
 
 import React, { useState } from 'react';
 import { Engineer } from '../types';
-import { ShieldCheck, User, Key, ArrowRight } from 'lucide-react';
+import { ShieldCheck, User, Key, ArrowRight, AlertCircle } from 'lucide-react';
 
 interface LoginViewProps {
   onLogin: (user: Engineer) => void;
-  engineers: Engineer[];
+  engineers: (Engineer & { password?: string })[];
 }
 
 const LoginView: React.FC<LoginViewProps> = ({ onLogin, engineers }) => {
   const [selectedId, setSelectedId] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   const handleEnter = (e: React.FormEvent) => {
     e.preventDefault();
     const user = engineers.find(e => e.id === selectedId);
-    if (user) onLogin(user);
+    
+    // Simple mock authentication check
+    if (user && (password === user.password || password === 'password123')) {
+      onLogin(user);
+    } else {
+      setError('Invalid identity or password. Try "password123"');
+      setTimeout(() => setError(''), 3000);
+    }
   };
 
   return (
@@ -53,18 +62,27 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin, engineers }) => {
               <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
               <input 
                 type="password" 
-                disabled
-                placeholder="••••••••"
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-mono"
-                defaultValue="password123"
+                required
+                placeholder="Enter password"
+                className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-2 rounded-2xl focus:ring-4 outline-none transition-all font-mono ${
+                  error ? 'border-red-300 focus:ring-red-500/10' : 'border-slate-100 focus:ring-blue-500/10'
+                }`}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
+            {error && (
+              <div className="flex items-center space-x-2 text-red-500 text-xs font-bold animate-pulse px-1">
+                <AlertCircle size={14} />
+                <span>{error}</span>
+              </div>
+            )}
             <p className="text-[10px] text-slate-400 italic text-center">In production, auth is handled via corporate SSO.</p>
           </div>
 
           <button 
             type="submit"
-            disabled={!selectedId}
+            disabled={!selectedId || !password}
             className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-500/20 hover:bg-blue-700 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:translate-y-0 disabled:shadow-none flex items-center justify-center space-x-3"
           >
             <span>Start Shift</span>

@@ -1,10 +1,15 @@
 
 import { Subscriber, Ticket, Engineer, AccountStatus, TicketPriority, TicketStatus } from './types';
 
-export const mockEngineers: Engineer[] = [
-  { id: 'eng-1', name: 'Zack Wilson', role: 'Engineer', isOnShift: false },
-  { id: 'eng-2', name: 'Sarah Chen', role: 'Engineer', isOnShift: false },
-  { id: 'mgr-1', name: 'Admin Manager', role: 'Manager', isOnShift: false },
+// Extended Engineer type conceptually for this mock
+export interface EngineerWithPassword extends Engineer {
+  password?: string;
+}
+
+export const mockEngineers: (Engineer & { password?: string })[] = [
+  { id: 'eng-1', name: 'Zack Wilson', role: 'Engineer', isOnShift: false, password: 'password123' },
+  { id: 'eng-2', name: 'Sarah Chen', role: 'Engineer', isOnShift: false, password: 'password123' },
+  { id: 'mgr-1', name: 'Admin Manager', role: 'Manager', isOnShift: false, password: 'password123' },
 ];
 
 export const mockSubscribers: Subscriber[] = [
