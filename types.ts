@@ -58,11 +58,13 @@ export interface Ticket {
   priority: TicketPriority;
   status: TicketStatus;
   assignedEngineerId?: string;
-  channel: 'WhatsApp' | 'Manual';
+  // Fix: Expand allowed channel types to include 'WhatsApp' as it is used in constants.ts
+  channel: 'Manual' | 'WhatsApp';
   createdAt: string;
   resolvedAt?: string;
   resolutionNotes?: string;
   hardwareReplacement?: string;
+  followUpNote?: string; // New: Instructions for the next member
 }
 
 export interface Comment {

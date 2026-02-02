@@ -20,13 +20,15 @@ import {
   Plus,
   X,
   MapPin,
-  Globe
+  Globe,
+  FileText
 } from 'lucide-react';
 
 import DashboardView from './views/DashboardView';
 import CRMView from './views/CRMView';
 import TicketView from './views/TicketView';
 import AnalyticsView from './views/AnalyticsView';
+import AdvancedReportingView from './views/AdvancedReportingView';
 import AdminView from './views/AdminView';
 import LoginView from './views/LoginView';
 import ShiftBanner from './components/ShiftBanner';
@@ -177,6 +179,7 @@ const App: React.FC = () => {
             </div>
 
             <NavLink to="/analytics" icon={<BarChart3 size={20} />} label="Reporting" />
+            <NavLink to="/advanced-reporting" icon={<FileText size={20} />} label="Analytics Report" />
             {isManager && <NavLink to="/admin" icon={<Settings size={20} />} label="Admin Console" />}
           </div>
 
@@ -261,6 +264,17 @@ const App: React.FC = () => {
                 } 
               />
               <Route path="/analytics" element={<AnalyticsView tickets={tickets} engineers={engineers} currentUser={currentUser} />} />
+              <Route 
+                path="/advanced-reporting" 
+                element={
+                  <AdvancedReportingView 
+                    tickets={tickets} 
+                    subscribers={subscribers} 
+                    engineers={engineers} 
+                    buildings={buildings} 
+                  />
+                } 
+              />
               {isManager && (
                 <Route 
                   path="/admin" 

@@ -17,7 +17,7 @@ import {
   Area
 } from 'recharts';
 import { Ticket, TicketStatus, Engineer } from '../types';
-import { TrendingUp, Clock, AlertTriangle, Home, Users, Download, Calendar } from 'lucide-react';
+import { TrendingUp, Clock, AlertTriangle, Home, Users, Calendar } from 'lucide-react';
 
 interface AnalyticsViewProps {
   tickets: Ticket[];
@@ -70,43 +70,6 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tickets, engineers, curre
     });
   }, [tickets]);
 
-  const handleDownloadReport = () => {
-    const summary = [
-      ['Report Date', new Date().toLocaleString()],
-      ['On-Duty Shift Engineer', currentUser.name],
-      ['Total Tickets', tickets.length],
-      ['MTTR (Avg)', `${mttrMinutes} min`],
-      ['On-Site Rate', `${onSiteRate}%`],
-      ['Critical Failures', tickets.filter(t => t.priority === 'Emergency').length]
-    ];
-
-    const ticketHeaders = ['ID', 'Subject', 'Status', 'Priority', 'Created At', 'Resolved At', 'Hardware Replacement'];
-    const ticketRows = tickets.map(t => [
-      t.id,
-      t.subject,
-      t.status,
-      t.priority,
-      t.createdAt,
-      t.resolvedAt || 'N/A',
-      t.hardwareReplacement || 'None'
-    ]);
-
-    let csvContent = "ORIGIN ISP - PERFORMANCE KPI REPORT\n\n";
-    csvContent += summary.map(row => row.join(',')).join('\n') + "\n\n";
-    csvContent += "DETAILED TICKET LOGS\n";
-    csvContent += ticketHeaders.join(',') + "\n";
-    csvContent += ticketRows.map(row => row.map(cell => `"${cell?.toString().replace(/"/g, '""') || ''}"`).join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `origin_performance_report_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const COLORS = ['#3B82F6', '#6366F1', '#10B981', '#F59E0B'];
 
   return (
@@ -116,13 +79,6 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tickets, engineers, curre
           <h1 className="text-3xl font-black text-slate-800 tracking-tight">Service Quality KPIs</h1>
           <p className="text-slate-500 font-medium">Real-time performance metrics and workload distribution.</p>
         </div>
-        <button 
-          onClick={handleDownloadReport}
-          className="flex items-center space-x-2 px-6 py-3 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-all font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200"
-        >
-          <Download size={18} />
-          <span>Export Analytics Report</span>
-        </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
