@@ -1,15 +1,10 @@
 
 import { Subscriber, Ticket, Engineer, AccountStatus, TicketPriority, TicketStatus } from './types';
 
-// Extended Engineer type conceptually for this mock
-export interface EngineerWithPassword extends Engineer {
-  password?: string;
-}
-
-export const mockEngineers: (Engineer & { password?: string })[] = [
-  { id: 'eng-1', name: 'Zack Wilson', role: 'Engineer', isOnShift: false, password: 'password123' },
-  { id: 'eng-2', name: 'Sarah Chen', role: 'Engineer', isOnShift: false, password: 'password123' },
-  { id: 'mgr-1', name: 'Admin Manager', role: 'Manager', isOnShift: false, password: 'password123' },
+export const mockEngineers: Engineer[] = [
+  { id: 'eng-1', name: 'Zack Wilson', role: 'Engineer', password: 'password123', isOnShift: false },
+  { id: 'eng-2', name: 'Sarah Chen', role: 'Engineer', password: 'password123', isOnShift: false },
+  { id: 'mgr-1', name: 'Admin Manager', role: 'Manager', password: 'password123', isOnShift: false },
 ];
 
 export const mockSubscribers: Subscriber[] = [
@@ -21,7 +16,8 @@ export const mockSubscribers: Subscriber[] = [
     condoName: 'Horizon Residences',
     unitNumber: 'A-12-05',
     status: AccountStatus.ACTIVE,
-    routerSerialNumber: 'SN-HOR-001293'
+    routerSerialNumber: 'SN-HOR-001293',
+    plan: '500Mbps'
   },
   {
     id: 'sub-2',
@@ -31,7 +27,8 @@ export const mockSubscribers: Subscriber[] = [
     condoName: 'Skyline Towers',
     unitNumber: 'B-05-11',
     status: AccountStatus.SUSPENDED,
-    routerSerialNumber: 'SN-SKY-992211'
+    routerSerialNumber: 'SN-SKY-992211',
+    plan: '100Mbps'
   },
   {
     id: 'sub-3',
@@ -41,7 +38,8 @@ export const mockSubscribers: Subscriber[] = [
     condoName: 'Horizon Residences',
     unitNumber: 'C-22-01',
     status: AccountStatus.ACTIVE,
-    routerSerialNumber: 'SN-HOR-887766'
+    routerSerialNumber: 'SN-HOR-887766',
+    plan: '300Mbps'
   }
 ];
 

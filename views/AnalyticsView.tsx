@@ -12,14 +12,15 @@ import {
   Pie, 
   Cell 
 } from 'recharts';
-import { Ticket, TicketStatus } from '../types';
-import { TrendingUp, Clock, AlertTriangle, Home } from 'lucide-react';
+import { Ticket, TicketStatus, Engineer } from '../types';
+import { TrendingUp, Clock, AlertTriangle, Home, Users } from 'lucide-react';
 
 interface AnalyticsViewProps {
   tickets: Ticket[];
+  engineers: Engineer[];
 }
 
-const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tickets }) => {
+const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tickets, engineers }) => {
   // 1. Mean Time To Resolve (MTTR)
   const resolvedTickets = tickets.filter(t => t.status === TicketStatus.RESOLVED && t.resolvedAt);
   const totalResolutionTime = resolvedTickets.reduce((acc, t) => {
@@ -32,13 +33,13 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tickets }) => {
   const siteVisitTickets = tickets.filter(t => t.status === TicketStatus.PENDING_SITE_VISIT || t.hardwareReplacement);
   const onSiteRate = tickets.length > 0 ? Math.round((siteVisitTickets.length / tickets.length) * 100) : 0;
 
-  // 3. Recurring Issues (Mock Logic)
-  const recurringIssues = [
-    { unit: 'A-12-05', condo: 'Horizon Res.', count: 4 },
-    { unit: 'B-05-11', condo: 'Skyline Towers', count: 3 },
-  ];
+  // Workload Distribution
+  const workloadData = engineers.map(eng => ({
+    name: eng.name.split(' ')[0],
+    tickets: tickets.filter(t => t.assignedEngineerId === eng.id && t.status !== TicketStatus.CLOSED).length
+  }));
 
-  // Data for Charts
+  // Data for Status Chart
   const statusData = [
     { name: 'Open', value: tickets.filter(t => t.status === TicketStatus.OPEN).length },
     { name: 'In-Progress', value: tickets.filter(t => t.status === TicketStatus.IN_PROGRESS).length },
@@ -51,51 +52,75 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tickets }) => {
   return (
     <div className="space-y-8 pb-12">
       <div>
-        <h1 className="text-3xl font-bold text-slate-800">Operational Analytics</h1>
-        <p className="text-slate-500">Service quality metrics and performance KPIs.</p>
+        <h1 className="text-3xl font-black text-slate-800 tracking-tight">Service Quality KPIs</h1>
+        <p className="text-slate-500 font-medium">Real-time performance metrics and workload distribution.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard 
-          label="Avg. MTTR" 
+          label="Resolution (MTTR)" 
           value={`${mttrMinutes} min`} 
           icon={<Clock className="text-blue-500" />} 
-          trend="+5% vs last week" 
+          trend="+5% vs shift avg" 
         />
         <MetricCard 
-          label="On-Site Rate" 
+          label="Field Ops Rate" 
           value={`${onSiteRate}%`} 
           icon={<Home className="text-purple-500" />} 
-          trend="-2% improvement" 
+          trend="Target: <15%" 
         />
         <MetricCard 
           label="Active Load" 
           value={tickets.filter(t => t.status !== TicketStatus.CLOSED).length} 
           icon={<TrendingUp className="text-green-500" />} 
-          trend="Steady" 
+          trend="Global Volume" 
         />
         <MetricCard 
-          label="Emergency" 
+          label="Critical Failures" 
           value={tickets.filter(t => t.priority === 'Emergency').length} 
           icon={<AlertTriangle className="text-red-500" />} 
-          trend="Attention needed" 
+          trend="Immediate Action" 
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-800 mb-6">Volume by Ticket Status</h3>
+        <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
+          <div className="flex justify-between items-center mb-10">
+            <h3 className="text-lg font-black text-slate-800 tracking-tight">Workload Distribution</h3>
+            <Users size={20} className="text-slate-300" />
+          </div>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={workloadData}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 900, fill: '#94A3B8' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 900, fill: '#94A3B8' }} />
+                <Tooltip 
+                  cursor={{ fill: '#F8FAFC' }}
+                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                />
+                <Bar dataKey="tickets" radius={[12, 12, 0, 0]} fill="#3B82F6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm">
+           <div className="flex justify-between items-center mb-10">
+            <h3 className="text-lg font-black text-slate-800 tracking-tight">Global Queue Status</h3>
+            <div className="bg-slate-50 px-3 py-1 rounded-full text-[9px] font-black text-slate-400 uppercase tracking-widest">Live Flow</div>
+          </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={statusData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: '#94A3B8' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 600, fill: '#94A3B8' }} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 900, fill: '#94A3B8' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 900, fill: '#94A3B8' }} />
                 <Tooltip 
                   cursor={{ fill: '#F8FAFC' }}
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
                 />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                <Bar dataKey="value" radius={[12, 12, 0, 0]}>
                   {statusData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
@@ -104,44 +129,19 @@ const AnalyticsView: React.FC<AnalyticsViewProps> = ({ tickets }) => {
             </ResponsiveContainer>
           </div>
         </div>
-
-        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-          <h3 className="text-lg font-bold text-slate-800 mb-6">Hotspot Alerts (Recurring Issues)</h3>
-          <div className="space-y-4">
-            {recurringIssues.map((issue, i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-red-50 rounded-2xl border border-red-100">
-                <div className="flex items-center space-x-4">
-                  <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-white font-bold">
-                    !
-                  </div>
-                  <div>
-                    <p className="font-bold text-red-900">{issue.condo} - {issue.unit}</p>
-                    <p className="text-xs text-red-700 font-medium">{issue.count} support tickets in last 30 days</p>
-                  </div>
-                </div>
-                <button className="text-xs font-bold text-red-700 bg-white px-3 py-1.5 rounded-lg border border-red-200 hover:bg-red-100 transition-all uppercase tracking-wider">
-                  Audit Path
-                </button>
-              </div>
-            ))}
-            <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-100 mt-4">
-              <p className="text-sm text-slate-400 font-medium">Automatic escalation triggers at 5+ monthly tickets per unit.</p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );
 };
 
 const MetricCard: React.FC<{ label: string, value: string | number, icon: React.ReactNode, trend: string }> = ({ label, value, icon, trend }) => (
-  <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
-    <div className="flex items-center justify-between mb-4">
-      <div className="p-3 bg-slate-50 rounded-2xl">{icon}</div>
-      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{trend}</span>
+  <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm hover:shadow-xl transition-all group">
+    <div className="flex items-center justify-between mb-6">
+      <div className="p-4 bg-slate-50 rounded-[25px] group-hover:bg-blue-50 transition-colors">{icon}</div>
+      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest group-hover:text-blue-500 transition-colors">{trend}</span>
     </div>
-    <p className="text-sm font-bold text-slate-500 mb-1">{label}</p>
-    <p className="text-3xl font-black text-slate-800">{value}</p>
+    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+    <p className="text-3xl font-black text-slate-800 tracking-tight">{value}</p>
   </div>
 );
 

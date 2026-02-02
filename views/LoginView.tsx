@@ -5,7 +5,7 @@ import { ShieldCheck, User, Key, ArrowRight, AlertCircle } from 'lucide-react';
 
 interface LoginViewProps {
   onLogin: (user: Engineer) => void;
-  engineers: (Engineer & { password?: string })[];
+  engineers: Engineer[];
 }
 
 const LoginView: React.FC<LoginViewProps> = ({ onLogin, engineers }) => {
@@ -17,11 +17,10 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin, engineers }) => {
     e.preventDefault();
     const user = engineers.find(e => e.id === selectedId);
     
-    // Simple mock authentication check
-    if (user && (password === user.password || password === 'password123')) {
+    if (user && password === user.password) {
       onLogin(user);
     } else {
-      setError('Invalid identity or password. Try "password123"');
+      setError('Invalid identity or password. Please try again.');
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -38,6 +37,13 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin, engineers }) => {
         </div>
 
         <form onSubmit={handleEnter} className="bg-white rounded-3xl shadow-2xl p-10 space-y-8">
+          {error && (
+            <div className="bg-red-50 border border-red-100 p-4 rounded-2xl flex items-center space-x-3 text-red-600 animate-in fade-in slide-in-from-top-2">
+              <AlertCircle size={20} />
+              <p className="text-sm font-bold">{error}</p>
+            </div>
+          )}
+
           <div className="space-y-4">
             <label className="text-sm font-bold text-slate-500 uppercase tracking-widest ml-1">Identity Selection</label>
             <div className="relative">
@@ -63,21 +69,15 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin, engineers }) => {
               <input 
                 type="password" 
                 required
-                placeholder="Enter password"
-                className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-2 rounded-2xl focus:ring-4 outline-none transition-all font-mono ${
-                  error ? 'border-red-300 focus:ring-red-500/10' : 'border-slate-100 focus:ring-blue-500/10'
+                placeholder="••••••••"
+                className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-2 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-mono ${
+                  error ? 'border-red-500' : 'border-slate-100'
                 }`}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            {error && (
-              <div className="flex items-center space-x-2 text-red-500 text-xs font-bold animate-pulse px-1">
-                <AlertCircle size={14} />
-                <span>{error}</span>
-              </div>
-            )}
-            <p className="text-[10px] text-slate-400 italic text-center">In production, auth is handled via corporate SSO.</p>
+            <p className="text-[10px] text-slate-400 italic text-center">Hint: Default passwords are 'password123'</p>
           </div>
 
           <button 

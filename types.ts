@@ -26,15 +26,28 @@ export enum AuthorType {
   CUSTOMER = 'Customer'
 }
 
+export interface Building {
+  id: string;
+  name: string;
+  address: string;
+}
+
+export interface InternetPackage {
+  id: string;
+  name: string;
+  speed: string;
+}
+
 export interface Subscriber {
   id: string;
   name: string;
   phone: string;
   email: string;
-  condoName: string;
+  condoName: string; // References Building name
   unitNumber: string;
   status: AccountStatus;
   routerSerialNumber: string;
+  plan: string; // References InternetPackage name
 }
 
 export interface Ticket {
@@ -65,6 +78,7 @@ export interface Engineer {
   id: string;
   name: string;
   role: 'Engineer' | 'Manager';
+  password: string;
   isOnShift: boolean;
   lastLogin?: string;
   lastLogout?: string;
