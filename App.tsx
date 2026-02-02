@@ -260,7 +260,7 @@ const App: React.FC = () => {
                   />
                 } 
               />
-              <Route path="/analytics" element={<AnalyticsView tickets={tickets} engineers={engineers} />} />
+              <Route path="/analytics" element={<AnalyticsView tickets={tickets} engineers={engineers} currentUser={currentUser} />} />
               {isManager && (
                 <Route 
                   path="/admin" 
