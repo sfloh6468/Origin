@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { 
   Plus, 
@@ -20,7 +20,8 @@ import {
   Zap,
   Edit2,
   Building as BuildingIcon,
-  RefreshCw
+  RefreshCw,
+  ChevronDown
 } from 'lucide-react';
 import { Subscriber, AccountStatus, Ticket, Building, InternetPackage } from '../types';
 
@@ -52,6 +53,25 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
     plan: ''
   });
 
+  // Track if fields are set to 'Not Available'
+  const [isPhoneNA, setIsPhoneNA] = useState(false);
+  const [isEmailNA, setIsEmailNA] = useState(false);
+
+  // Custom dropdown states
+  const [showPhoneDropdown, setShowPhoneDropdown] = useState(false);
+  const [showEmailDropdown, setShowEmailDropdown] = useState(false);
+  const phoneRef = useRef<HTMLDivElement>(null);
+  const emailRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (phoneRef.current && !phoneRef.current.contains(event.target as Node)) setShowPhoneDropdown(false);
+      if (emailRef.current && !emailRef.current.contains(event.target as Node)) setShowEmailDropdown(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Handle navigation from Dashboard "New Registration" button
   useEffect(() => {
     if (location.state?.openRegister) {
@@ -82,10 +102,16 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
       plan: plans[0]?.name || '' 
     });
     setEditingId(null);
+    setIsPhoneNA(false);
+    setIsEmailNA(false);
   };
 
   const handleEditClick = (sub: Subscriber) => {
     setEditingId(sub.id);
+    const isPNA = sub.phone === 'Not Available';
+    const isENA = sub.email === 'Not Available';
+    setIsPhoneNA(isPNA);
+    setIsEmailNA(isENA);
     setFormData({
       name: sub.name,
       phone: sub.phone,
@@ -100,17 +126,24 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.phone.startsWith('+')) {
+    
+    const finalData = {
+      ...formData,
+      phone: isPhoneNA ? 'Not Available' : formData.phone,
+      email: isEmailNA ? 'Not Available' : formData.email
+    };
+
+    if (!isPhoneNA && finalData.phone !== '' && !finalData.phone.startsWith('+')) {
       alert("Phone number must be in international format (e.g., +60...)");
       return;
     }
     
     if (editingId) {
-      setSubscribers(prev => prev.map(s => s.id === editingId ? { ...s, ...formData } : s));
+      setSubscribers(prev => prev.map(s => s.id === editingId ? { ...s, ...finalData } : s));
     } else {
       const newSubscriber: Subscriber = {
         id: `sub-${Date.now()}`,
-        ...formData,
+        ...finalData,
         status: AccountStatus.ACTIVE
       };
       setSubscribers(prev => [...prev, newSubscriber]);
@@ -198,7 +231,6 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
     const nextStatus = statuses[nextIndex];
 
     if (!isManager && nextStatus === AccountStatus.UNSUBSCRIBED) {
-      // If not manager, skip unsubscribed and go to active
       setSubscribers(prev => prev.map(s => s.id === id ? { ...s, status: AccountStatus.ACTIVE } : s));
       return;
     }
@@ -267,8 +299,8 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
             <thead>
               <tr className="bg-slate-50/50 text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">
                 <th className="px-8 py-5">Identity</th>
-                <th className="px-8 py-5">Connectivity</th>
-                <th className="px-8 py-5">Infrastructure</th>
+                <th className="px-8 py-5">Contact</th>
+                <th className="px-8 py-5">Address</th>
                 <th className="px-8 py-5">Service Tier</th>
                 <th className="px-8 py-5">Status</th>
                 <th className="px-8 py-5 text-right">Control</th>
@@ -292,11 +324,15 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
                     <div className="space-y-1.5">
                       <div className="flex items-center space-x-2 text-slate-600 font-bold text-xs">
                         <Phone size={14} className="text-slate-400" />
-                        <span>{sub.phone}</span>
+                        <span className={sub.phone === 'Not Available' ? 'italic text-slate-400 opacity-60' : ''}>
+                          {sub.phone}
+                        </span>
                       </div>
                       <div className="flex items-center space-x-2 text-slate-500 text-xs italic">
                         <Mail size={14} className="text-slate-400" />
-                        <span>{sub.email}</span>
+                        <span className={sub.email === 'Not Available' ? 'opacity-40' : ''}>
+                          {sub.email}
+                        </span>
                       </div>
                     </div>
                   </td>
@@ -367,36 +403,120 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
             </div>
             <form onSubmit={handleSubmit} className="p-10 space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <FormInput label="Full Name" value={formData.name} onChange={v => setFormData({...formData, name: v})} placeholder="e.g. John Doe" />
-                <FormInput label="Phone" value={formData.phone} onChange={v => setFormData({...formData, phone: v})} placeholder="+60..." />
-                <FormInput label="Email" value={formData.email} onChange={v => setFormData({...formData, email: v})} placeholder="user@domain.com" type="email" />
+                <FormInput label="Full Name / Operator" value={formData.name} onChange={v => setFormData({...formData, name: v})} placeholder="e.g. John Doe" />
+                
+                {/* PHONE WITH INTEGRATED SELECTOR */}
+                <div className="space-y-3" ref={phoneRef}>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone</label>
+                  <div className="relative">
+                    <div 
+                      onClick={() => !isPhoneNA && setShowPhoneDropdown(!showPhoneDropdown)}
+                      className="absolute right-0 top-0 bottom-0 flex items-center pr-4 cursor-pointer z-10"
+                    >
+                      <ChevronDown size={18} className={`text-slate-400 transition-transform ${showPhoneDropdown ? 'rotate-180' : ''}`} />
+                    </div>
+                    <input 
+                      required 
+                      type="text" 
+                      disabled={isPhoneNA}
+                      className={`w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all pr-12 ${isPhoneNA ? 'opacity-50 grayscale cursor-not-allowed italic text-slate-400' : ''}`}
+                      placeholder={isPhoneNA ? "Not Available" : "+60..."}
+                      value={isPhoneNA ? "Not Available" : formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    />
+                    {showPhoneDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 shadow-xl rounded-2xl overflow-hidden z-[50] animate-in slide-in-from-top-2 duration-150">
+                        <button 
+                          type="button" 
+                          onClick={() => { setIsPhoneNA(false); setFormData({...formData, phone: ''}); setShowPhoneDropdown(false); }}
+                          className="w-full text-left px-5 py-3 text-sm font-black text-slate-600 hover:bg-slate-50 transition-colors"
+                        >
+                          Key In
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => { setIsPhoneNA(true); setFormData({...formData, phone: 'Not Available'}); setShowPhoneDropdown(false); }}
+                          className="w-full text-left px-5 py-3 text-sm font-black text-slate-400 hover:bg-slate-50 transition-colors"
+                        >
+                          Not Available
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* EMAIL WITH INTEGRATED SELECTOR */}
+                <div className="space-y-3" ref={emailRef}>
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email</label>
+                   <div className="relative">
+                    <div 
+                      onClick={() => !isEmailNA && setShowEmailDropdown(!showEmailDropdown)}
+                      className="absolute right-0 top-0 bottom-0 flex items-center pr-4 cursor-pointer z-10"
+                    >
+                      <ChevronDown size={18} className={`text-slate-400 transition-transform ${showEmailDropdown ? 'rotate-180' : ''}`} />
+                    </div>
+                    <input 
+                      required 
+                      type="email" 
+                      disabled={isEmailNA}
+                      className={`w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all pr-12 ${isEmailNA ? 'opacity-50 grayscale cursor-not-allowed italic text-slate-400' : ''}`}
+                      placeholder={isEmailNA ? "Not Available" : "user@domain.com"}
+                      value={isEmailNA ? "Not Available" : formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    />
+                    {showEmailDropdown && (
+                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-100 shadow-xl rounded-2xl overflow-hidden z-[50] animate-in slide-in-from-top-2 duration-150">
+                        <button 
+                          type="button" 
+                          onClick={() => { setIsEmailNA(false); setFormData({...formData, email: ''}); setShowEmailDropdown(false); }}
+                          className="w-full text-left px-5 py-3 text-sm font-black text-slate-600 hover:bg-slate-50 transition-colors"
+                        >
+                          Key In
+                        </button>
+                        <button 
+                          type="button" 
+                          onClick={() => { setIsEmailNA(true); setFormData({...formData, email: 'Not Available'}); setShowEmailDropdown(false); }}
+                          className="w-full text-left px-5 py-3 text-sm font-black text-slate-400 hover:bg-slate-50 transition-colors"
+                        >
+                          Not Available
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 
                 {/* DYNAMIC PLAN SELECTION */}
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Internet Package</label>
-                  <select 
-                    required 
-                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-3xl font-black text-sm text-blue-700 outline-none appearance-none cursor-pointer focus:border-blue-500"
-                    value={formData.plan}
-                    onChange={(e) => setFormData({...formData, plan: e.target.value})}
-                  >
-                    <option value="" disabled>Select Tier...</option>
-                    {plans.map(p => <option key={p.id} value={p.name}>{p.name} ({p.speed})</option>)}
-                  </select>
+                  <div className="relative group">
+                    <select 
+                      required 
+                      className="w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-3xl font-black text-sm text-blue-700 outline-none appearance-none cursor-pointer focus:border-blue-500 transition-colors"
+                      value={formData.plan}
+                      onChange={(e) => setFormData({...formData, plan: e.target.value})}
+                    >
+                      <option value="" disabled>Select Tier...</option>
+                      {plans.map(p => <option key={p.id} value={p.name}>{p.name} ({p.speed})</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-blue-500 transition-colors" size={18} />
+                  </div>
                 </div>
 
                 {/* DYNAMIC BUILDING SELECTION */}
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Infrastructure</label>
-                  <select 
-                    required 
-                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-3xl font-black text-sm text-slate-800 outline-none appearance-none cursor-pointer focus:border-blue-500"
-                    value={formData.condoName}
-                    onChange={(e) => setFormData({...formData, condoName: e.target.value})}
-                  >
-                    <option value="" disabled>Select Building...</option>
-                    {buildings.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
-                  </select>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Assigned Address</label>
+                  <div className="relative group">
+                    <select 
+                      required 
+                      className="w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-3xl font-black text-sm text-slate-800 outline-none appearance-none cursor-pointer focus:border-blue-500 transition-colors"
+                      value={formData.condoName}
+                      onChange={(e) => setFormData({...formData, condoName: e.target.value})}
+                    >
+                      <option value="" disabled>Select Building...</option>
+                      {buildings.map(b => <option key={b.id} value={b.name}>{b.name}</option>)}
+                    </select>
+                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none group-focus-within:text-blue-500 transition-colors" size={18} />
+                  </div>
                 </div>
 
                 <FormInput label="Unit / Lot Number" value={formData.unitNumber} onChange={v => setFormData({...formData, unitNumber: v})} placeholder="e.g. A-12-01" />
@@ -406,8 +526,8 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
               </div>
 
               <div className="pt-6 flex justify-end space-x-4">
-                <button type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="px-8 py-4 border-2 border-slate-100 text-slate-600 rounded-3xl font-black uppercase text-xs tracking-widest">Cancel</button>
-                <button type="submit" className="px-10 py-4 bg-blue-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl shadow-blue-200">
+                <button type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="px-8 py-4 border-2 border-slate-100 text-slate-600 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-slate-50 transition-colors">Cancel</button>
+                <button type="submit" className="px-10 py-4 bg-blue-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95">
                   {editingId ? 'Apply Update' : 'Initialize Account'}
                 </button>
               </div>
@@ -441,7 +561,7 @@ const FormInput: React.FC<{ label: string, value: string, onChange: (v: string) 
     <input 
       required 
       type={type} 
-      className={`w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-100 outline-none transition-all ${mono ? 'font-mono uppercase' : ''}`}
+      className={`w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all ${mono ? 'font-mono uppercase' : ''}`}
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}

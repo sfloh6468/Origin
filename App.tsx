@@ -358,14 +358,14 @@ const BuildingManager: React.FC<{
             <input 
               type="text" 
               placeholder="Building Name" 
-              className="px-4 py-2 border rounded-xl text-sm"
+              className="px-4 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:border-blue-500 outline-none transition-colors"
               value={name}
               onChange={e => setName(e.target.value)}
             />
             <input 
               type="text" 
               placeholder="Physical Address" 
-              className="px-4 py-2 border rounded-xl text-sm"
+              className="px-4 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:border-blue-500 outline-none transition-colors"
               value={address}
               onChange={e => setAddress(e.target.value)}
             />
@@ -428,14 +428,14 @@ const PlanManager: React.FC<{
             <input 
               type="text" 
               placeholder="Plan Name (e.g. Gamer Plus)" 
-              className="px-4 py-2 border rounded-xl text-sm"
+              className="px-4 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:border-blue-500 outline-none transition-colors"
               value={name}
               onChange={e => setName(e.target.value)}
             />
             <input 
               type="text" 
               placeholder="Speed (e.g. 500Mbps)" 
-              className="px-4 py-2 border rounded-xl text-sm"
+              className="px-4 py-2 border border-slate-200 rounded-xl text-sm bg-white focus:border-blue-500 outline-none transition-colors"
               value={speed}
               onChange={e => setSpeed(e.target.value)}
             />

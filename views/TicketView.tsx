@@ -410,7 +410,7 @@ const TicketView: React.FC<TicketViewProps> = ({
 
                 <div className="w-96 border-l border-slate-100 bg-slate-50/20 p-10 space-y-10">
                   <div className="space-y-8">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Connectivity Profile</h4>
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact Profile</h4>
                     {subscriber ? (
                       <div className="space-y-6">
                         <div className="bg-white p-6 rounded-[30px] border border-slate-100 shadow-sm">
@@ -486,7 +486,7 @@ const TicketView: React.FC<TicketViewProps> = ({
                   <input 
                     type="text"
                     placeholder="Search by name, unit, or phone..."
-                    className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-[30px] font-bold text-sm outline-none focus:border-blue-500 transition-all"
+                    className="w-full pl-14 pr-6 py-5 bg-white border-2 border-slate-200 rounded-[30px] font-bold text-sm outline-none focus:border-blue-500 transition-all"
                     value={subSearch}
                     onChange={(e) => setSubSearch(e.target.value)}
                   />
@@ -520,7 +520,7 @@ const TicketView: React.FC<TicketViewProps> = ({
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Incident Subject</label>
                   <input 
                     required
-                    className="w-full px-8 py-5 bg-slate-50 border-2 border-slate-100 rounded-[30px] font-bold text-sm outline-none"
+                    className="w-full px-8 py-5 bg-white border-2 border-slate-200 rounded-[30px] font-bold text-sm outline-none focus:border-blue-500 transition-colors"
                     value={reportSubject}
                     onChange={(e) => setReportSubject(e.target.value)}
                     placeholder="Short summary (e.g. Total Outage)"
@@ -529,7 +529,7 @@ const TicketView: React.FC<TicketViewProps> = ({
                 <div className="space-y-4">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Initial Priority</label>
                    <select 
-                    className="w-full px-8 py-5 bg-slate-50 border-2 border-slate-100 rounded-[30px] font-black text-xs uppercase outline-none cursor-pointer"
+                    className="w-full px-8 py-5 bg-white border-2 border-slate-200 rounded-[30px] font-black text-xs uppercase outline-none cursor-pointer focus:border-blue-500 transition-colors appearance-none"
                     value={reportPriority}
                     onChange={(e) => setReportPriority(e.target.value as TicketPriority)}
                    >
@@ -540,7 +540,7 @@ const TicketView: React.FC<TicketViewProps> = ({
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Issue Description</label>
                   <textarea 
                     rows={4}
-                    className="w-full px-8 py-5 bg-slate-50 border-2 border-slate-100 rounded-[30px] font-bold text-sm outline-none resize-none"
+                    className="w-full px-8 py-5 bg-white border-2 border-slate-200 rounded-[30px] font-bold text-sm outline-none resize-none focus:border-blue-500 transition-colors"
                     value={reportDesc}
                     onChange={(e) => setReportDesc(e.target.value)}
                     placeholder="Detailed condition reported by subscriber..."
@@ -577,7 +577,7 @@ const TicketView: React.FC<TicketViewProps> = ({
               <div className="space-y-4">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Follow-up Condition (Optional)</label>
                 <textarea 
-                  className="w-full px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-[30px] font-bold text-sm outline-none focus:border-blue-600 transition-all resize-none"
+                  className="w-full px-6 py-5 bg-white border-2 border-slate-200 rounded-[30px] font-bold text-sm outline-none focus:border-blue-600 transition-all resize-none"
                   rows={4}
                   placeholder="Instructions for the next member on shift..."
                   value={followUpNote}
@@ -598,7 +598,7 @@ const TicketView: React.FC<TicketViewProps> = ({
 
       {/* DELETE MODAL */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-md rounded-[40px] shadow-2xl p-10 text-center animate-in zoom-in-95">
             <div className="w-20 h-20 bg-red-50 rounded-[30px] flex items-center justify-center text-red-600 mx-auto mb-8">
               <Trash2 size={40} />
@@ -631,7 +631,7 @@ const TicketView: React.FC<TicketViewProps> = ({
                   required
                   placeholder="e.g. WiFi 6 Router Replacement, 2m Patch Cord..."
                   rows={4}
-                  className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-[30px] text-sm font-bold focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none transition-all"
+                  className="w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-[30px] text-sm font-bold focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none transition-all"
                   value={hardwareDetails}
                   onChange={(e) => setHardwareDetails(e.target.value)}
                 />
