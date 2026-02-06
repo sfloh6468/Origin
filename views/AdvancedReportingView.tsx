@@ -88,7 +88,7 @@ const AdvancedReportingView: React.FC<AdvancedReportingViewProps> = ({ tickets, 
       ];
     });
 
-    let csvContent = "ISP SENTINEL - ADVANCED ANALYTICS REPORT\n";
+    let csvContent = "ORIGIN - ADVANCED ANALYTICS REPORT\n";
     csvContent += `Generated: ${new Date().toLocaleString()}\n\n`;
     csvContent += headers.join(',') + "\n";
     csvContent += rows.map(row => row.map(cell => `"${cell?.toString().replace(/"/g, '""') || ''}"`).join(',')).join('\n');
@@ -97,7 +97,7 @@ const AdvancedReportingView: React.FC<AdvancedReportingViewProps> = ({ tickets, 
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', `isp_advanced_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', `origin_advanced_report_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

@@ -32,7 +32,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin, engineers }) => {
           <div className="bg-blue-600 p-4 rounded-3xl shadow-2xl shadow-blue-500/30 mb-6">
             <ShieldCheck size={48} className="text-white" />
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">ISP SENTINEL</h1>
+          <h1 className="text-3xl font-black text-white tracking-tight uppercase">ORIGIN</h1>
           <p className="text-slate-400 mt-2 font-medium">Shift Engineering Portal</p>
         </div>
 
@@ -91,7 +91,7 @@ const LoginView: React.FC<LoginViewProps> = ({ onLogin, engineers }) => {
         </form>
 
         <p className="text-center mt-8 text-slate-500 text-xs font-bold uppercase tracking-widest">
-          Secured by origin V4.2 - GPON OPS
+          Secured by Origin V4.2 - GPON OPS
         </p>
       </div>
     </div>

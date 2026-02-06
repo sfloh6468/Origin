@@ -135,7 +135,7 @@ const App: React.FC = () => {
             <div className="bg-blue-500 p-2 rounded-lg">
               <ShieldCheck className="w-6 h-6 text-white" />
             </div>
-            <span className="font-bold text-xl tracking-tight">ISP Sentinel</span>
+            <span className="font-bold text-xl tracking-tight">Origin</span>
           </div>
 
           <div className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
