@@ -21,7 +21,8 @@ import {
   X,
   MapPin,
   Globe,
-  FileText
+  FileText,
+  CalendarCheck
 } from 'lucide-react';
 
 import DashboardView from './views/DashboardView';
@@ -29,10 +30,11 @@ import CRMView from './views/CRMView';
 import TicketView from './views/TicketView';
 import AnalyticsView from './views/AnalyticsView';
 import AdvancedReportingView from './views/AdvancedReportingView';
+import AttendanceView from './views/AttendanceView';
 import AdminView from './views/AdminView';
 import LoginView from './views/LoginView';
 import ShiftBanner from './components/ShiftBanner';
-import { Engineer, Subscriber, Ticket, Comment, Building, InternetPackage } from './types';
+import { Engineer, Subscriber, Ticket, Comment, Building, InternetPackage, AttendanceRecord } from './types';
 import { mockSubscribers, mockTickets, mockEngineers } from './constants';
 
 const App: React.FC = () => {
@@ -53,8 +55,11 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('isp_engineers');
     return saved ? JSON.parse(saved) : mockEngineers;
   });
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>(() => {
+    const saved = localStorage.getItem('isp_attendance');
+    return saved ? JSON.parse(saved) : [];
+  });
 
-  // NEW: Customer DB States
   const [buildings, setBuildings] = useState<Building[]>(() => {
     const saved = localStorage.getItem('isp_buildings');
     return saved ? JSON.parse(saved) : [
@@ -75,7 +80,6 @@ const App: React.FC = () => {
   const [isCustomerDBExpanded, setIsCustomerDBExpanded] = useState(false);
   const [activeModal, setActiveModal] = useState<'building' | 'plan' | null>(null);
 
-  // Track active sessions for collision detection
   const [activeViewing, setActiveViewing] = useState<{ [ticketId: string]: string }>({});
 
   useEffect(() => {
@@ -85,29 +89,93 @@ const App: React.FC = () => {
     localStorage.setItem('isp_engineers', JSON.stringify(engineers));
     localStorage.setItem('isp_buildings', JSON.stringify(buildings));
     localStorage.setItem('isp_plans', JSON.stringify(plans));
-  }, [subscribers, tickets, comments, engineers, buildings, plans]);
+    localStorage.setItem('isp_attendance', JSON.stringify(attendance));
+  }, [subscribers, tickets, comments, engineers, buildings, plans, attendance]);
 
   const handleLogin = (user: Engineer) => {
-    setCurrentUser(user);
-    const updated = engineers.map(e => e.id === user.id ? { ...e, lastLogin: new Date().toISOString(), isOnShift: true } : e);
-    setEngineers(updated);
-    setCurrentUser({ ...user, isOnShift: true });
+    const loginTime = new Date().toISOString();
+    const date = loginTime.split('T')[0];
+    
+    // Create attendance record
+    const newRecord: AttendanceRecord = {
+      id: `att-${Date.now()}`,
+      engineerId: user.id,
+      engineerName: user.name,
+      date: date,
+      loginTime: loginTime
+    };
+    
+    setAttendance(prev => [...prev, newRecord]);
+    setCurrentUser({ ...user, isOnShift: true, lastLogin: loginTime });
+    setEngineers(prev => prev.map(e => e.id === user.id ? { ...e, lastLogin: loginTime, isOnShift: true } : e));
+  };
+
+  const calculateOvertime = (loginStr: string, logoutStr: string) => {
+    const login = new Date(loginStr);
+    const logout = new Date(logoutStr);
+    
+    const shiftStart = new Date(login);
+    shiftStart.setHours(9, 0, 0, 0);
+    
+    const shiftEnd = new Date(login);
+    shiftEnd.setHours(20, 0, 0, 0);
+
+    let otMinutes = 0;
+    
+    // Work before 09:00
+    if (login < shiftStart) {
+      const earlyEnd = logout < shiftStart ? logout : shiftStart;
+      otMinutes += (earlyEnd.getTime() - login.getTime()) / 60000;
+    }
+    
+    // Work after 20:00
+    if (logout > shiftEnd) {
+      const lateStart = login > shiftEnd ? login : shiftEnd;
+      otMinutes += (logout.getTime() - lateStart.getTime()) / 60000;
+    }
+
+    return Math.max(0, Math.round(otMinutes));
   };
 
   const handleLogout = () => {
     if (currentUser) {
-      const updated = engineers.map(e => e.id === currentUser.id ? { ...e, lastLogout: new Date().toISOString(), isOnShift: false } : e);
-      setEngineers(updated);
+      const logoutTime = new Date().toISOString();
+      
+      // Update most recent incomplete attendance record for this user
+      setAttendance(prev => {
+        const lastIndex = [...prev].reverse().findIndex(r => r.engineerId === currentUser.id && !r.logoutTime);
+        if (lastIndex === -1) return prev;
+        
+        const actualIndex = prev.length - 1 - lastIndex;
+        const record = prev[actualIndex];
+        const duration = (new Date(logoutTime).getTime() - new Date(record.loginTime).getTime()) / 60000;
+        const ot = calculateOvertime(record.loginTime, logoutTime);
+
+        const newArr = [...prev];
+        newArr[actualIndex] = {
+          ...record,
+          logoutTime: logoutTime,
+          totalMinutes: Math.round(duration),
+          overtimeMinutes: ot
+        };
+        return newArr;
+      });
+
+      setEngineers(prev => prev.map(e => e.id === currentUser.id ? { ...e, lastLogout: logoutTime, isOnShift: false } : e));
+      setCurrentUser(null);
     }
-    setCurrentUser(null);
   };
 
   const toggleShift = () => {
     if (!currentUser) return;
     const newShiftStatus = !currentUser.isOnShift;
-    const updated = engineers.map(e => e.id === currentUser.id ? { ...e, isOnShift: newShiftStatus } : e);
-    setEngineers(updated);
-    setCurrentUser({ ...currentUser, isOnShift: newShiftStatus });
+    
+    if (newShiftStatus) {
+      // Re-entering shift counts as a new session for accurate timing
+      handleLogin(currentUser);
+    } else {
+      handleLogout();
+    }
   };
 
   if (!currentUser) {
@@ -143,7 +211,6 @@ const App: React.FC = () => {
             <NavLink to="/crm" icon={<Users size={20} />} label="Subscribers" />
             <NavLink to="/tickets" icon={<TicketIcon size={20} />} label="Ticket Queue" />
             
-            {/* Customer DB Dropdown */}
             <div className="space-y-1">
               <button 
                 onClick={() => setIsCustomerDBExpanded(!isCustomerDBExpanded)}
@@ -180,6 +247,7 @@ const App: React.FC = () => {
 
             <NavLink to="/analytics" icon={<BarChart3 size={20} />} label="Reporting" />
             <NavLink to="/advanced-reporting" icon={<FileText size={20} />} label="Analytics Report" />
+            <NavLink to="/attendance" icon={<CalendarCheck size={20} />} label="Attendance" />
             {isManager && <NavLink to="/admin" icon={<Settings size={20} />} label="Admin Console" />}
           </div>
 
@@ -221,74 +289,14 @@ const App: React.FC = () => {
           <ShiftBanner engineer={currentUser} />
           <div className="flex-1 overflow-y-auto p-8">
             <Routes>
-              <Route 
-                path="/" 
-                element={
-                  <DashboardView 
-                    tickets={tickets} 
-                    subscribers={subscribers} 
-                    currentUser={currentUser} 
-                    setTickets={setTickets}
-                    setComments={setComments}
-                  />
-                } 
-              />
-              <Route 
-                path="/crm" 
-                element={
-                  <CRMView 
-                    subscribers={subscribers} 
-                    setSubscribers={setSubscribers} 
-                    isManager={isManager} 
-                    tickets={tickets}
-                    setTickets={setTickets}
-                    buildings={buildings}
-                    plans={plans}
-                  />
-                } 
-              />
-              <Route 
-                path="/tickets" 
-                element={
-                  <TicketView 
-                    tickets={tickets} 
-                    setTickets={setTickets} 
-                    subscribers={subscribers} 
-                    currentUser={currentUser}
-                    comments={comments}
-                    setComments={setComments}
-                    isManager={isManager}
-                    activeViewing={activeViewing}
-                    setActiveViewing={setActiveViewing}
-                  />
-                } 
-              />
+              <Route path="/" element={<DashboardView tickets={tickets} subscribers={subscribers} currentUser={currentUser} setTickets={setTickets} setComments={setComments} />} />
+              <Route path="/crm" element={<CRMView subscribers={subscribers} setSubscribers={setSubscribers} isManager={isManager} tickets={tickets} setTickets={setTickets} buildings={buildings} plans={plans} />} />
+              <Route path="/tickets" element={<TicketView tickets={tickets} setTickets={setTickets} subscribers={subscribers} currentUser={currentUser} comments={comments} setComments={setComments} isManager={isManager} activeViewing={activeViewing} setActiveViewing={setActiveViewing} />} />
               <Route path="/analytics" element={<AnalyticsView tickets={tickets} engineers={engineers} currentUser={currentUser} />} />
-              <Route 
-                path="/advanced-reporting" 
-                element={
-                  <AdvancedReportingView 
-                    tickets={tickets} 
-                    subscribers={subscribers} 
-                    engineers={engineers} 
-                    buildings={buildings} 
-                  />
-                } 
-              />
+              <Route path="/advanced-reporting" element={<AdvancedReportingView tickets={tickets} subscribers={subscribers} engineers={engineers} buildings={buildings} />} />
+              <Route path="/attendance" element={<AttendanceView attendance={attendance} engineers={engineers} />} />
               {isManager && (
-                <Route 
-                  path="/admin" 
-                  element={
-                    <AdminView 
-                      engineers={engineers} 
-                      setEngineers={setEngineers}
-                      tickets={tickets}
-                      setTickets={setTickets}
-                      subscribers={subscribers}
-                      setSubscribers={setSubscribers}
-                    />
-                  } 
-                />
+                <Route path="/admin" element={<AdminView engineers={engineers} setEngineers={setEngineers} tickets={tickets} setTickets={setTickets} subscribers={subscribers} setSubscribers={setSubscribers} />} />
               )}
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
@@ -298,31 +306,19 @@ const App: React.FC = () => {
         {/* CUSTOMER DB POPUPS */}
         {activeModal === 'building' && (
           <Modal onClose={() => setActiveModal(null)} title="Manage Infrastructure">
-            <BuildingManager 
-              buildings={buildings} 
-              onAdd={addBuilding} 
-              onDelete={(id) => setBuildings(prev => prev.filter(b => b.id !== id))}
-              isManager={isManager}
-            />
+            <BuildingManager buildings={buildings} onAdd={addBuilding} onDelete={(id) => setBuildings(prev => prev.filter(b => b.id !== id))} isManager={isManager} />
           </Modal>
         )}
 
         {activeModal === 'plan' && (
           <Modal onClose={() => setActiveModal(null)} title="Manage Service Plans">
-            <PlanManager 
-              plans={plans} 
-              onAdd={addPlan} 
-              onDelete={(id) => setPlans(prev => prev.filter(p => p.id !== id))}
-              isManager={isManager}
-            />
+            <PlanManager plans={plans} onAdd={addPlan} onDelete={(id) => setPlans(prev => prev.filter(p => p.id !== id))} isManager={isManager} />
           </Modal>
         )}
       </div>
     </Router>
   );
 };
-
-// --- SUBSIDIARY COMPONENTS ---
 
 const Modal: React.FC<{ onClose: () => void, title: string, children: React.ReactNode }> = ({ onClose, title, children }) => (
   <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">

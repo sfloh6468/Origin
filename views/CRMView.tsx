@@ -21,7 +21,8 @@ import {
   Edit2,
   Building as BuildingIcon,
   RefreshCw,
-  ChevronDown
+  ChevronDown,
+  AlertCircle
 } from 'lucide-react';
 import { Subscriber, AccountStatus, Ticket, Building, InternetPackage } from '../types';
 
@@ -42,6 +43,7 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
   const [editingId, setEditingId] = useState<string | null>(null);
   const [subscriberToDelete, setSubscriberToDelete] = useState<string | null>(null);
   const [importLogs, setImportLogs] = useState<string[]>([]);
+  const [formError, setFormError] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     name: '',
@@ -104,6 +106,7 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
     setEditingId(null);
     setIsPhoneNA(false);
     setIsEmailNA(false);
+    setFormError(null);
   };
 
   const handleEditClick = (sub: Subscriber) => {
@@ -121,11 +124,13 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
       routerSerialNumber: sub.routerSerialNumber,
       plan: sub.plan
     });
+    setFormError(null);
     setIsFormOpen(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
     
     const finalData = {
       ...formData,
@@ -133,8 +138,30 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
       email: isEmailNA ? 'Not Available' : formData.email
     };
 
+    // Validation: Duplicate Check
+    const isDuplicateUnit = subscribers.some(s => 
+      s.id !== editingId && 
+      s.condoName === finalData.condoName && 
+      s.unitNumber === finalData.unitNumber
+    );
+
+    const isDuplicateSerial = subscribers.some(s => 
+      s.id !== editingId && 
+      s.routerSerialNumber.toUpperCase() === finalData.routerSerialNumber.toUpperCase()
+    );
+
+    if (isDuplicateUnit) {
+      setFormError(`Unit ${finalData.unitNumber} at ${finalData.condoName} is already registered.`);
+      return;
+    }
+
+    if (isDuplicateSerial) {
+      setFormError(`Router Serial Number ${finalData.routerSerialNumber} is already active in the system.`);
+      return;
+    }
+
     if (!isPhoneNA && finalData.phone !== '' && !finalData.phone.startsWith('+')) {
-      alert("Phone number must be in international format (e.g., +60...)");
+      setFormError("Phone number must be in international format (e.g., +60...)");
       return;
     }
     
@@ -225,15 +252,12 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
   };
 
   const cycleStatus = (id: string, currentStatus: AccountStatus) => {
+    if (!isManager) return; // Full privilege restriction
+
     const statuses = [AccountStatus.ACTIVE, AccountStatus.SUSPENDED, AccountStatus.UNSUBSCRIBED];
     const currentIndex = statuses.indexOf(currentStatus);
     const nextIndex = (currentIndex + 1) % statuses.length;
     const nextStatus = statuses[nextIndex];
-
-    if (!isManager && nextStatus === AccountStatus.UNSUBSCRIBED) {
-      setSubscribers(prev => prev.map(s => s.id === id ? { ...s, status: AccountStatus.ACTIVE } : s));
-      return;
-    }
 
     setSubscribers(prev => prev.map(s => s.id === id ? { ...s, status: nextStatus } : s));
   };
@@ -282,7 +306,7 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
 
       <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex items-center bg-slate-50/30">
-          <div className="relative flex-1 max-w-md">
+          <div className="relative flex-1 max-md">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
             <input 
               type="text" 
@@ -353,16 +377,19 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
                   </td>
                   <td className="px-8 py-5">
                     <button 
+                      disabled={!isManager}
                       onClick={() => cycleStatus(sub.id, sub.status)}
-                      className={`group/status flex items-center space-x-2 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 ${
-                        sub.status === AccountStatus.ACTIVE ? 'bg-green-100 text-green-700 hover:bg-green-200' : 
-                        sub.status === AccountStatus.SUSPENDED ? 'bg-amber-100 text-amber-700 hover:bg-amber-200' : 
-                        'bg-red-100 text-red-700 hover:bg-red-200'
+                      className={`group/status flex items-center space-x-2 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
+                        isManager ? 'hover:scale-105 active:scale-95 cursor-pointer hover:shadow-md' : 'cursor-default opacity-80'
+                      } ${
+                        sub.status === AccountStatus.ACTIVE ? 'bg-green-100 text-green-700' : 
+                        sub.status === AccountStatus.SUSPENDED ? 'bg-amber-100 text-amber-700' : 
+                        'bg-red-100 text-red-700'
                       }`}
-                      title="Click to toggle status"
+                      title={isManager ? "Click to toggle status" : "Manager access required to change status"}
                     >
                       <span>{sub.status}</span>
-                      <RefreshCw size={10} className="opacity-0 group-hover/status:opacity-100 transition-opacity" />
+                      {isManager && <RefreshCw size={10} className="opacity-0 group-hover/status:opacity-100 transition-opacity" />}
                     </button>
                   </td>
                   <td className="px-8 py-5 text-right">
@@ -402,6 +429,18 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
               </button>
             </div>
             <form onSubmit={handleSubmit} className="p-10 space-y-8">
+              {formError && (
+                <div className="bg-red-50 border-2 border-red-100 p-6 rounded-[25px] flex items-start space-x-4 animate-shake">
+                  <div className="bg-red-500 p-2 rounded-xl text-white shadow-lg shadow-red-200">
+                    <AlertCircle size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-red-700 uppercase tracking-widest mb-1">Validation Error</p>
+                    <p className="text-sm font-black text-red-900">{formError}</p>
+                  </div>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <FormInput label="Full Name / Operator" value={formData.name} onChange={v => setFormData({...formData, name: v})} placeholder="e.g. John Doe" />
                 
@@ -521,12 +560,12 @@ const CRMView: React.FC<CRMViewProps> = ({ subscribers, setSubscribers, isManage
 
                 <FormInput label="Unit / Lot Number" value={formData.unitNumber} onChange={v => setFormData({...formData, unitNumber: v})} placeholder="e.g. A-12-01" />
                 <div className="md:col-span-2">
-                  <FormInput label="Router Serial (SN)" value={formData.routerSerialNumber} onChange={v => setFormData({...formData, routerSerialNumber: v})} placeholder="Hardware Identification" mono />
+                  <FormInput label="Router Serial (SN)" value={formData.routerSerialNumber} onChange={v => setFormData({...formData, routerSerialNumber: v})} placeholder="HARDWARE IDENTIFICATION" mono />
                 </div>
               </div>
 
               <div className="pt-6 flex justify-end space-x-4">
-                <button type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="px-8 py-4 border-2 border-slate-100 text-slate-600 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-slate-50 transition-colors">Cancel</button>
+                <button type="button" onClick={() => { setIsFormOpen(false); resetForm(); }} className="px-8 py-4 border-2 border-slate-100 text-slate-600 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-slate-50 transition-colors text-slate-400">CANCEL</button>
                 <button type="submit" className="px-10 py-4 bg-blue-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95">
                   {editingId ? 'Apply Update' : 'Initialize Account'}
                 </button>
@@ -561,7 +600,7 @@ const FormInput: React.FC<{ label: string, value: string, onChange: (v: string) 
     <input 
       required 
       type={type} 
-      className={`w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all ${mono ? 'font-mono uppercase' : ''}`}
+      className={`w-full px-6 py-4 bg-white border-2 border-slate-200 rounded-3xl text-sm font-bold focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all ${mono ? 'font-mono uppercase placeholder:text-slate-200' : ''}`}
       placeholder={placeholder}
       value={value}
       onChange={(e) => onChange(e.target.value)}

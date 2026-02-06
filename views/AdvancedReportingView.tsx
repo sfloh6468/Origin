@@ -137,7 +137,7 @@ const AdvancedReportingView: React.FC<AdvancedReportingViewProps> = ({ tickets, 
           <div className="space-y-4">
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1 flex items-center space-x-2">
               <BuildingIcon size={14} className="text-blue-500" />
-              <span>Infrastructure</span>
+              <span>Assigned Address</span>
             </label>
             <select 
               className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-50 rounded-[25px] font-bold text-sm outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer"

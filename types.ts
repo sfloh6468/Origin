@@ -58,7 +58,6 @@ export interface Ticket {
   priority: TicketPriority;
   status: TicketStatus;
   assignedEngineerId?: string;
-  // Fix: Expand allowed channel types to include 'WhatsApp' as it is used in constants.ts
   channel: 'Manual' | 'WhatsApp';
   createdAt: string;
   resolvedAt?: string;
@@ -84,6 +83,17 @@ export interface Engineer {
   isOnShift: boolean;
   lastLogin?: string;
   lastLogout?: string;
+}
+
+export interface AttendanceRecord {
+  id: string;
+  engineerId: string;
+  engineerName: string;
+  date: string;
+  loginTime: string;
+  logoutTime?: string;
+  totalMinutes?: number;
+  overtimeMinutes?: number;
 }
 
 export interface CollisionState {
